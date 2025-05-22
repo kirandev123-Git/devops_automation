@@ -1,40 +1,48 @@
-#Version
 pipeline {
-    agent any
-    tools{
-        maven 'maven 3.5.4'
+    agent {
+        docker {
+            image 'maven:3.8.5-openjdk-17' // Base image with Maven pre-installed
+            args '-u root' // Run as root to install additional packages like npm
+        }
     }
-    stages{
-        stage('Build Maven'){
-            steps{
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://https://github.com/kirandev123-Git/devops-automation']]])
-                sh 'mvn clean install'
-            }
-        }
-        stage('Build docker image'){
-            steps{
-                script{
-                    sh 'docker build -t kirandev123-Git/devops-integration .'
-                }
-            }
-        }
-        stage('Push image to Hub'){
-            steps{
-                script{
-                   withCredentials([string(credentialsId: 'dockerhub-pwd', variable: 'dockerhubpwd')]) {
-                   sh 'docker login -u javatechie -p ${dockerhubpwd}'
 
-}
-                   sh 'docker push kirandev123-Git/devops-integration'
-                }
+    environment {
+        NODE_VERSION = '18.17.1'
+    }
+
+    stages {
+        stage('Install Node.js & npm') {
+            steps {
+                sh '''
+                    echo "Installing Node.js and npm..."
+                    apt-get update
+                    apt-get install -y curl
+
+                    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+                    apt-get install -y nodejs
+
+                    echo "Node.js version: $(node -v)"
+                    echo "npm version: $(npm -v)"
+                '''
             }
         }
-        stage('Deploy to k8s'){
-            steps{
-                script{
-                    kubernetesDeploy (configs: 'deploymentservice.yaml',kubeconfigId: 'k8sconfigpwd')
-                }
+
+        stage('Verify Maven') {
+            steps {
+                sh 'mvn -version'
             }
+        }
+
+        stage('Verify npm') {
+            steps {
+                sh 'npm -v'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Build complete.'
         }
     }
 }
