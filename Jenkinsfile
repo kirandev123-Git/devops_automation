@@ -1,5 +1,4 @@
 pipeline {
-<<<<<<< HEAD
     agent {
         docker {
             image 'maven:3.8.5-openjdk-17' // Base image with Maven pre-installed
