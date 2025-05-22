@@ -1,41 +1,58 @@
 pipeline {
     agent {
         docker {
-            image 'maven:3.8.5-openjdk-17' // Base image with Maven pre-installed
-            args '-u root' // Run as root to install additional packages like npm
+            image 'ubuntu:22.04'
+            args '-u root' // Run as root to install packages
         }
     }
 
     environment {
-        NODE_VERSION = '18.17.1'
+        MAVEN_VERSION = '3.9.6'
+        NODE_VERSION = '18.x'
     }
 
     stages {
-        stage('Install Node.js & npm') {
+        stage('Install Prerequisites') {
             steps {
                 sh '''
-                    echo "Installing Node.js and npm..."
                     apt-get update
-                    apt-get install -y curl
-
-                    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-                    apt-get install -y nodejs
-
-                    echo "Node.js version: $(node -v)"
-                    echo "npm version: $(npm -v)"
+                    apt-get install -y curl wget gnupg2 software-properties-common unzip
                 '''
             }
         }
 
-        stage('Verify Maven') {
+        stage('Install Maven') {
             steps {
-                sh 'mvn -version'
+                sh '''
+                    echo "Installing Maven ${MAVEN_VERSION}..."
+                    wget https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+                    tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt
+                    ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
+                    mvn -v
+                '''
             }
         }
 
-        stage('Verify npm') {
+        stage('Install Node.js and npm') {
             steps {
-                sh 'npm -v'
+                sh '''
+                    echo "Installing Node.js ${NODE_VERSION}..."
+                    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION} | bash -
+                    apt-get install -y nodejs
+                    node -v
+                    npm -v
+                '''
+            }
+        }
+
+        stage('Verify Tools') {
+            steps {
+                sh '''
+                    echo "Verifying installations..."
+                    mvn -v
+                    node -v
+                    npm -v
+                '''
             }
         }
     }
