@@ -1,9 +1,15 @@
 pipeline {
+<<<<<<< HEAD
     agent {
         docker {
             image 'maven:3.8.5-openjdk-17' // Base image with Maven pre-installed
             args '-u root' // Run as root to install additional packages like npm
         }
+=======
+    agent any
+    tools{
+        maven 'maven 3.6.0'
+>>>>>>> 9763b911415a798b3924549347f3f95a1623d9f2
     }
 
     environment {
